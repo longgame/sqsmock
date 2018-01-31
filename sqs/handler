@@ -1,0 +1,56 @@
+package sqs
+
+import (
+	"github.com/greenac/fifoqueue"
+	"net/http"
+	"encoding/json"
+	"github.com/greenac/gologger"
+	"github.com/greenac/restresponse"
+)
+
+var logger = gologger.GoLogger{}
+
+type RequestHandler struct {
+	Q *fifoqueue.FifoQueue
+}
+
+func (rh *RequestHandler) setUp() {
+	if rh.Q == nil {
+		q := fifoqueue.FifoQueue{}
+		rh.Q = &q
+	}
+}
+
+func (rh *RequestHandler) Add(w http.ResponseWriter, req *http.Request){
+	var m Message
+	rh.setUp()
+	err := json.NewDecoder(req.Body).Decode(&m)
+	if err != nil {
+		logger.Error("Failed to add message to queue:", err)
+		rh.error(w, ResponseInternalServerError)
+		return;
+	}
+
+	logger.Log("Adding new message to queue:", m)
+	rh.Q.Insert(m)
+}
+
+func (rh *RequestHandler) Retrieve(w http.ResponseWriter, req *http.Request){
+	var m Message
+	rh.setUp()
+	err := json.NewDecoder(req.Body).Decode(&m)
+	if err != nil {
+		logger.Error("Failed to add message to queue:", err)
+		rh.error(w, ResponseInternalServerError)
+		return
+	}
+
+	logger.Log("Adding new message to queue:", m)
+	rh.Q.Insert(m)
+}
+
+func (rh *RequestHandler) error(w http.ResponseWriter, rc ResponseCode) {
+	rr := restresponse.Response{Code: int(rc), Payload: nil}
+	rr.Respond(&w)
+}
+
