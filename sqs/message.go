@@ -18,7 +18,7 @@ func (m *Message)makeIdentifier() string {
 		return "NO_BODY"
 	}
 
-	return string(h.Sum(m.*MessageBody))
+	return string(h.Sum(*(m.MessageBody)))
 }
 
 func (m *Message)SetIdentifier() {
