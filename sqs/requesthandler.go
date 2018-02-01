@@ -6,10 +6,14 @@ import (
 	"encoding/json"
 	"github.com/greenac/sqsmock/logger"
 	"github.com/greenac/sqsmock/response"
+	"github.com/greenac/sqsmock/models"
 	"reflect"
+	"github.com/greenac/sqsmock/worker"
 )
 
+
 type RequestHandler struct {
+	WorkerUrl string
 	q *fifoqueue.FifoQueue
 	maxMessages int
 }
@@ -24,7 +28,7 @@ func (rh *RequestHandler) setUp() {
 }
 
 func (rh *RequestHandler) Add(w http.ResponseWriter, req *http.Request){
-	var m Message
+	var m models.Message
 	rh.setUp()
 	err := json.NewDecoder(req.Body).Decode(&m)
 	if err != nil {
@@ -33,18 +37,20 @@ func (rh *RequestHandler) Add(w http.ResponseWriter, req *http.Request){
 		return
 	}
 
-
 	m.SetIdentifier()
 	rh.q.Insert(m)
 
 	logger.Log("Added new message to queue:", m.Info())
+
+	wi := worker.Interface{BaseUrl: rh.WorkerUrl}
+	wi.SendNewMessage(&m)
 
 	pl := map[string]interface{}{"success": true, "MessageId": m.GetIdentifier()}
 	rh.sendOk(w, pl)
 }
 
 func (rh *RequestHandler) Delete(w http.ResponseWriter, req *http.Request){
-	var m Message
+	var m models.Message
 	rh.setUp()
 	err := json.NewDecoder(req.Body).Decode(&m)
 	if err != nil {
@@ -57,7 +63,7 @@ func (rh *RequestHandler) Delete(w http.ResponseWriter, req *http.Request){
 	nodes := rh.q.AsSlice()
 	var target *fifoqueue.QueueNode = nil
 	for _, n := range *nodes {
-		mm, ok := n.Payload.(Message)
+		mm, ok := n.Payload.(models.Message)
 		if !ok {
 			logger.Warn("Could not get message from node. Payload was not a Message")
 			continue
@@ -81,7 +87,7 @@ func (rh *RequestHandler) Delete(w http.ResponseWriter, req *http.Request){
 }
 
 func (rh *RequestHandler) RetrieveSingle(w http.ResponseWriter, req *http.Request){
-	var m Message
+	var m models.Message
 	rh.setUp()
 	err := json.NewDecoder(req.Body).Decode(&m)
 	if err != nil {
@@ -94,7 +100,7 @@ func (rh *RequestHandler) RetrieveSingle(w http.ResponseWriter, req *http.Reques
 	nodes := rh.q.AsSlice()
 	var target *fifoqueue.QueueNode = nil
 	for _, n := range *nodes {
-		mm, ok := n.Payload.(Message)
+		mm, ok := n.Payload.(models.Message)
 		if !ok {
 			logger.Warn("Could not get message from node. Payload was not a Message")
 			continue
@@ -117,7 +123,7 @@ func (rh *RequestHandler) RetrieveSingle(w http.ResponseWriter, req *http.Reques
 }
 
 func (rh *RequestHandler) Retrieve(w http.ResponseWriter, req *http.Request){
-	var m Message
+	var m models.Message
 	rh.setUp()
 	err := json.NewDecoder(req.Body).Decode(&m)
 	if err != nil {
@@ -134,9 +140,9 @@ func (rh *RequestHandler) Retrieve(w http.ResponseWriter, req *http.Request){
 	}
 
 	payloads := rh.q.GetPayloads(c)
-	messages := make([]Message, len(*payloads))
+	messages := make([]models.Message, len(*payloads))
 	for i, pl := range *payloads {
-		mm, ok := pl.(Message)
+		mm, ok := pl.(models.Message)
 		if !ok {
 			logger.Warn("Could not get message from payload. Payload not a Message. It is of type:", reflect.TypeOf(pl))
 			continue
