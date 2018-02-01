@@ -1,7 +1,9 @@
 package sqs
 
 const (
-	AddMessageEndpoint string = "/add-message"
-	DeleteMessageEndpoint string = "/delete-message"
-	RetrieveMessagesEndpoint string = "/retrieve-messages"
+	AddMessageEndpoint      = "/add-message"
+	DeleteMessageEndpoint   = "/delete-message"
+	RetrieveMessageEndpoint = "/retrieve-message"
+	RetrieveSingleMessageEndpoint = "/retrieve-single-message"
+	PrintQueueEndpoint      = "/print-queue"
 )
