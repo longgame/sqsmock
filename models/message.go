@@ -1,4 +1,4 @@
-package sqs
+package models
 
 import (
 	"crypto/md5"
