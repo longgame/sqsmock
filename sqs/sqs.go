@@ -3,8 +3,7 @@ package sqs
 type Endpoint string
 
 const (
-	AddMessage	Endpoint = "add-message"
+	SendMessage	Endpoint = "send-message"
 	DeleteMessage Endpoint = "delete-message"
-	GetMessages Endpoint = "get-messages"
+	RetrieveMessage Endpoint = "receive-message"
 )
-
