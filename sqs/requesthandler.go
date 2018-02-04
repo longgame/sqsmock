@@ -37,10 +37,10 @@ func (rh *RequestHandler) Add(w http.ResponseWriter, req *http.Request){
 		return
 	}
 
-	m.SetIdentifier()
-	rh.q.Insert(m)
+	m.SetIdentifiers()
+	n := rh.q.Insert(m)
 
-	logger.Log("Added new message to queue:", m.Info())
+	logger.Log("Added new message to queue. Node:", n)
 
 	wi := worker.Interface{BaseUrl: rh.WorkerUrl}
 	wi.SendNewMessage(&m)
@@ -59,27 +59,31 @@ func (rh *RequestHandler) Delete(w http.ResponseWriter, req *http.Request){
 		return
 	}
 
-	logger.Log("Got body to retrieving message", m.Info())
 	nodes := rh.q.AsSlice()
-	var target *fifoqueue.QueueNode = nil
+	logger.Log("Got # of nodes in handler delete:", len(*nodes))
+	var target *fifoqueue.QueueNode
 	for _, n := range *nodes {
+		logger.Log("node:", n)
 		mm, ok := n.Payload.(models.Message)
 		if !ok {
 			logger.Warn("Could not get message from node. Payload was not a Message")
 			continue
 		}
 
-		if *(mm.MessageId) == *(m.MessageId) {
+		if mm.ReceiptHandle == m.ReceiptHandle {
 			target = n
 			break
 		}
 	}
 
+	logger.Log("Found target:", target)
 	var pl map[string]interface{}
 	if target == nil {
 		pl = map[string]interface{}{"success": false}
 	} else {
+		logger.Warn("Before delete # of queue entries:", rh.q.Length())
 		suc := rh.q.Delete(target)
+		logger.Warn("After delete # of queue entries:", rh.q.Length())
 		pl = map[string]interface{}{"success": suc}
 	}
 
@@ -106,7 +110,7 @@ func (rh *RequestHandler) RetrieveSingle(w http.ResponseWriter, req *http.Reques
 			continue
 		}
 
-		if *(mm.MessageId) == *(m.MessageId) {
+		if mm.MessageId == m.MessageId {
 			target = n
 			break
 		}
@@ -132,11 +136,11 @@ func (rh *RequestHandler) Retrieve(w http.ResponseWriter, req *http.Request){
 		return
 	}
 
-	logger.Log("Got body to retrieving message", m.Info())
+	logger.Log("Got message in handler retrieve", m.Info())
 
 	c := rh.maxMessages
-	if m.MaxNumberOfMessages != nil && *(m.MaxNumberOfMessages) < rh.maxMessages {
-		c = *(m.MaxNumberOfMessages)
+	if m.MaxNumberOfMessages != 0 && m.MaxNumberOfMessages < rh.maxMessages {
+		c = m.MaxNumberOfMessages
 	}
 
 	payloads := rh.q.GetPayloads(c)
