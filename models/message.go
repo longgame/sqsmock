@@ -7,11 +7,12 @@ import (
 )
 
 type Message struct {
-	MessageId           *string `json:"MessageId"`
+	MessageId           string `json:"MessageId"`
 	MessageBody         string  `json:"MessageBody"`
 	QueueUrl            string  `json:"QueueUrl"`
-	MessageGroupId      *string `json:"MessageGroupId"`
-	MaxNumberOfMessages *int    `json:"MaxNumberOfMessages"`
+	MessageGroupId      string `json:"MessageGroupId"`
+	MaxNumberOfMessages int    `json:"MaxNumberOfMessages"`
+	ReceiptHandle 			string `json:"ReceiptHandle"`
 }
 
 func (m *Message) makeIdentifier() string {
@@ -22,17 +23,34 @@ func (m *Message) makeIdentifier() string {
 }
 
 func (m *Message) SetIdentifier() {
-	mId := m.makeIdentifier()
-	m.MessageId = &mId
+	m.MessageId = m.makeIdentifier()
 }
 
-func (m *Message) GetIdentifier() *string {
-	if m.MessageId != nil {
+func (m *Message) GetIdentifier() string {
+	if m.MessageId != "" {
 		return m.MessageId
 	}
 
 	m.SetIdentifier()
 	return m.MessageId
+}
+
+func (m *Message) SetReceiptHandle() {
+	m.ReceiptHandle = m.makeIdentifier()
+}
+
+func (m *Message) GetReceiptHandle() string {
+	if m.ReceiptHandle != "" {
+		return m.ReceiptHandle
+	}
+
+	m.SetReceiptHandle()
+	return m.ReceiptHandle
+}
+
+func (m *Message) SetIdentifiers() {
+	m.SetIdentifier()
+	m.SetReceiptHandle()
 }
 
 func (m *Message) Info() map[string]interface{} {
