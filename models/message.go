@@ -13,6 +13,7 @@ type Message struct {
 	MessageGroupId      string `json:"MessageGroupId"`
 	MaxNumberOfMessages int    `json:"MaxNumberOfMessages"`
 	ReceiptHandle 			string `json:"ReceiptHandle"`
+	ToWorker						bool   `json:"ToWorker"`
 }
 
 func (m *Message) makeIdentifier() string {
