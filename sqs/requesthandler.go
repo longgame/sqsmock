@@ -42,8 +42,25 @@ func (rh *RequestHandler) Add(w http.ResponseWriter, req *http.Request){
 
 	logger.Log("Added new message to queue. Node:", n)
 
+	var workerPl interface{}
+	if m.ToWorker {
+		logger.Log("Deleting node:", n, ". Simulating sending to worker.")
+		rh.q.Delete(n)
+		var mb map[string]interface{}
+		err = json.Unmarshal([]byte(m.MessageBody), &mb)
+		if err != nil {
+			logger.Error("Could not unmarshal message body.", err)
+			rh.error(w, ResponseInternalServerError)
+			return
+		}
+
+		workerPl = mb
+	} else {
+		workerPl = &m
+	}
+
 	wi := worker.Interface{BaseUrl: rh.WorkerUrl}
-	wi.SendNewMessage(&m)
+	wi.SendNewMessage(workerPl)
 
 	pl := map[string]interface{}{"success": true, "MessageId": m.GetIdentifier()}
 	rh.sendOk(w, pl)
@@ -77,6 +94,7 @@ func (rh *RequestHandler) Delete(w http.ResponseWriter, req *http.Request){
 	}
 
 	logger.Log("Found target:", target)
+
 	var pl map[string]interface{}
 	if target == nil {
 		pl = map[string]interface{}{"success": false}
