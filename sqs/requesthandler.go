@@ -13,7 +13,7 @@ import (
 
 
 type RequestHandler struct {
-	WorkerUrl string
+	WorkerUrl *string
 	q *fifoqueue.FifoQueue
 	maxMessages int
 }
@@ -42,25 +42,10 @@ func (rh *RequestHandler) Add(w http.ResponseWriter, req *http.Request){
 
 	logger.Log("Added new message to queue. Node:", n)
 
-	var workerPl interface{}
 	if m.ToWorker {
-		logger.Log("Deleting node:", n, ". Simulating sending to worker.")
+		rh.sendToWorker(&m)
 		rh.q.Delete(n)
-		var mb map[string]interface{}
-		err = json.Unmarshal([]byte(m.MessageBody), &mb)
-		if err != nil {
-			logger.Error("Could not unmarshal message body.", err)
-			rh.error(w, ResponseInternalServerError)
-			return
-		}
-
-		workerPl = mb
-	} else {
-		workerPl = &m
 	}
-
-	wi := worker.Interface{BaseUrl: rh.WorkerUrl}
-	wi.SendNewMessage(workerPl)
 
 	pl := map[string]interface{}{"success": true, "MessageId": m.GetIdentifier()}
 	rh.sendOk(w, pl)
@@ -175,6 +160,32 @@ func (rh *RequestHandler) Retrieve(w http.ResponseWriter, req *http.Request){
 	pl := map[string]interface{}{"Messages": messages}
 	rh.sendOk(w, pl)
 }
+
+func (rh *RequestHandler) sendToWorker(m *models.Message) error {
+	if  rh.WorkerUrl == nil {
+		return nil
+	}
+
+	var workerPl interface{}
+	if m.ToWorker {
+		var mb map[string]interface{}
+		err := json.Unmarshal([]byte(m.MessageBody), &mb)
+		if err != nil {
+			logger.Error("Could not unmarshal message body.", err)
+			return err
+		}
+
+		workerPl = mb
+	} else {
+		workerPl = &m
+	}
+
+	wi := worker.Interface{BaseUrl: *(rh.WorkerUrl)}
+	wi.SendNewMessage(workerPl)
+
+	return nil
+}
+
 
 func (rh *RequestHandler) Print(w http.ResponseWriter, req *http.Request){
 	rh.setUp()
