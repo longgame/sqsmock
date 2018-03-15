@@ -11,7 +11,7 @@ import (
 type endpoint string
 
 const (
-	workerNewMessageEndpoint endpoint = "/notification-center/new-message"
+	workerNewMessageEndpoint endpoint = "/passive-model/new-message"
 )
 
 type Interface struct {
