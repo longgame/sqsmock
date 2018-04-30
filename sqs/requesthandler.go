@@ -28,6 +28,8 @@ func (rh *RequestHandler) setUp() {
 }
 
 func (rh *RequestHandler) Add(w http.ResponseWriter, req *http.Request){
+	logger.Log("Request handler adding message")
+
 	var m models.Message
 	rh.setUp()
 	err := json.NewDecoder(req.Body).Decode(&m)
@@ -43,9 +45,12 @@ func (rh *RequestHandler) Add(w http.ResponseWriter, req *http.Request){
 	logger.Log("Added new message to queue. Node:", n)
 
 	if m.ToWorker {
+		logger.Log("Sending message to worker")
 		rh.sendToWorker(&m)
 		rh.q.Delete(n)
 	}
+
+	logger.Log("request handler queue has:", rh.q.Length(), "nodes after add")
 
 	pl := map[string]interface{}{"success": true, "MessageId": m.GetIdentifier()}
 	rh.sendOk(w, pl)
@@ -90,6 +95,7 @@ func (rh *RequestHandler) Delete(w http.ResponseWriter, req *http.Request){
 		pl = map[string]interface{}{"success": suc}
 	}
 
+	logger.Log("request handler queue has:", rh.q.Length(), "nodes after delete")
 	rh.sendOk(w, pl)
 }
 
@@ -103,7 +109,6 @@ func (rh *RequestHandler) RetrieveSingle(w http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	logger.Log("Got body to retrieving message", m.Info())
 	nodes := rh.q.AsSlice()
 	var target *fifoqueue.QueueNode = nil
 	for _, n := range *nodes {
