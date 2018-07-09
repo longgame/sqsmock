@@ -207,12 +207,12 @@ func (rh *RequestHandler) Print(w http.ResponseWriter, req *http.Request){
 
 func (rh *RequestHandler) error(w http.ResponseWriter, rc ResponseCode) {
 	e := map[string]interface{}{"code": rc, "message": "Sqs mock failed with a generic error"}
-	rr := response.Response{Error: &e, Data: nil}
+	rr := response.Response{Error: &e, ResponseMetadata: nil}
 	rr.Respond(w)
 }
 
 func (rh *RequestHandler) sendOk(w http.ResponseWriter, payload interface{}) {
-	rr := response.Response{Error: nil, Data: &payload}
+	rr := response.Response{Error: nil, ResponseMetadata: &payload}
 	rr.Respond(w)
 }
 
