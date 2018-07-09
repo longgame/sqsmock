@@ -56,7 +56,6 @@ func (sa *serverArguments) getUrls() *[]string {
 	return &urls
 }
 
-
 func Start() {
 	args := parseArgs()
 	if args.ServerUrl == nil {
