@@ -20,7 +20,10 @@ const(
 )
 
 func (sa *serverArguments) formatServerUrl() {
-	if strings.Contains(*(sa.ServerUrl), "http://") {
+	if sa.ServerUrl == nil {
+		url := "localhost:4242"
+		sa.ServerUrl = &url
+	} else if strings.Contains(*(sa.ServerUrl), "http://") {
 		url := strings.Replace(*(sa.ServerUrl), "http://", "", -1)
 		sa.ServerUrl = &url
 	}
@@ -58,10 +61,6 @@ func (sa *serverArguments) getUrls() *[]string {
 
 func Start() {
 	args := parseArgs()
-	if args.ServerUrl == nil {
-		logger.Error("No server url provided... use --url flag with desired server url")
-		panic("INVALID_INPUT")
-	}
 
 	if args.WorkerUrl == nil {
 		logger.Warn("No worker url provided. If a worker is needed to forward messages, use --workerUrl flag")
