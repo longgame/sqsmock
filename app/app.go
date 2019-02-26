@@ -13,11 +13,11 @@ import (
 type serverArguments struct {
 	ServerUrl *string
 	WorkerUrl *string
-	Delay int64
+	Delay     int64
 }
 
 const (
-	delay = "delay"
+	delay        = "delay"
 	serverUrlArg = "url"
 	workerUrlArg = "workerUrl"
 )
