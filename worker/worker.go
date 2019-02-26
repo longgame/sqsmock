@@ -1,11 +1,11 @@
 package worker
 
 import (
-	"net/http"
 	"bytes"
-	"io/ioutil"
 	"encoding/json"
 	"github.com/greenac/sqsmock/logger"
+	"io/ioutil"
+	"net/http"
 )
 
 type endpoint string

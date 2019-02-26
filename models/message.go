@@ -8,12 +8,12 @@ import (
 
 type Message struct {
 	MessageId           string `json:"MessageId"`
-	MessageBody         string  `json:"MessageBody"`
-	QueueUrl            string  `json:"QueueUrl"`
+	MessageBody         string `json:"MessageBody"`
+	QueueUrl            string `json:"QueueUrl"`
 	MessageGroupId      string `json:"MessageGroupId"`
 	MaxNumberOfMessages int    `json:"MaxNumberOfMessages"`
-	ReceiptHandle 			string `json:"ReceiptHandle"`
-	ToWorker						bool   `json:"ToWorker"`
+	ReceiptHandle       string `json:"ReceiptHandle"`
+	ToWorker            bool   `json:"ToWorker"`
 }
 
 func (m *Message) makeIdentifier() string {
