@@ -1,11 +1,11 @@
 package app
 
 import (
-	"os"
+	"github.com/gorilla/mux"
 	"github.com/greenac/artemis/logger"
 	"github.com/greenac/sqsmock/sqs"
-	"github.com/gorilla/mux"
 	"net/http"
+	"os"
 	"strings"
 )
 
@@ -14,7 +14,7 @@ type serverArguments struct {
 	WorkerUrl *string
 }
 
-const(
+const (
 	serverUrlArg = "url"
 	workerUrlArg = "workerurl"
 )
@@ -35,7 +35,7 @@ func (sa *serverArguments) formatServerUrl() {
 }
 
 func (sa *serverArguments) formatWorkerUrl() {
-	if !strings.Contains(*(sa.WorkerUrl), "http://") && !strings.Contains(*(sa.WorkerUrl), "https://"){
+	if !strings.Contains(*(sa.WorkerUrl), "http://") && !strings.Contains(*(sa.WorkerUrl), "https://") {
 		url := "http://" + *(sa.WorkerUrl)
 		sa.WorkerUrl = &url
 	}
@@ -86,7 +86,7 @@ func parseArgs() *serverArguments {
 		a := args[i]
 		if strings.Contains(a, "--") {
 			arg := strings.ToLower(strings.Replace(a, "-", "", -1))
-			if i + 1 < len(args) {
+			if i+1 < len(args) {
 				val := args[i+1]
 				switch arg {
 				case serverUrlArg:
