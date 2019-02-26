@@ -6,17 +6,20 @@ import (
 	"github.com/greenac/sqsmock/sqs"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 )
 
 type serverArguments struct {
 	ServerUrl *string
 	WorkerUrl *string
+	Delay int64
 }
 
 const (
+	delay = "delay"
 	serverUrlArg = "url"
-	workerUrlArg = "workerurl"
+	workerUrlArg = "workerUrl"
 )
 
 func (sa *serverArguments) formatServerUrl() {
@@ -69,7 +72,7 @@ func Start() {
 	args.formatUrls()
 	logger.Log("Running sqs mock server on urls:", *(args.getUrls()))
 
-	handler := sqs.RequestHandler{WorkerUrl: args.WorkerUrl}
+	handler := sqs.RequestHandler{WorkerUrl: args.WorkerUrl, Delay: args.Delay}
 	router := mux.NewRouter()
 	router.HandleFunc(sqs.AddMessageEndpoint, handler.Add).Methods("POST")
 	router.HandleFunc(sqs.RetrieveMessageEndpoint, handler.Retrieve).Methods("POST")
@@ -85,10 +88,19 @@ func parseArgs() *serverArguments {
 	for i := 0; i < len(args); i += 1 {
 		a := args[i]
 		if strings.Contains(a, "--") {
-			arg := strings.ToLower(strings.Replace(a, "-", "", -1))
+			arg := strings.Replace(a, "-", "", -1)
 			if i+1 < len(args) {
 				val := args[i+1]
 				switch arg {
+				case delay:
+					logger.Log("Delay:", val)
+					d, err := strconv.Atoi(val)
+					if err != nil {
+						logger.Error("Could not convert arg:", val, "to integer for delay")
+						panic(err)
+					}
+
+					sa.Delay = int64(d)
 				case serverUrlArg:
 					sa.ServerUrl = &val
 					break

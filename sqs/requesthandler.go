@@ -9,12 +9,15 @@ import (
 	"github.com/greenac/sqsmock/worker"
 	"net/http"
 	"reflect"
+	"time"
 )
 
 type RequestHandler struct {
 	WorkerUrl   *string
+	Delay int64
 	q           *fifoqueue.FifoQueue
 	maxMessages int
+	count   int
 }
 
 func (rh *RequestHandler) setUp() {
@@ -45,8 +48,29 @@ func (rh *RequestHandler) Add(w http.ResponseWriter, req *http.Request) {
 
 	if m.ToWorker {
 		logger.Log("Sending message to worker")
-		rh.sendToWorker(&m)
-		rh.q.Delete(n)
+		if rh.Delay > 0 {
+			rh.count += 1
+			c := rh.count
+			logger.Log("Delaying message by:", rh.Delay, "milliseconds", "for message count:", c)
+			timer := time.NewTimer(time.Millisecond * time.Duration(rh.Delay))
+			go func() {
+				<-timer.C
+				logger.Log("Sending delayed message to worker for message count:", c)
+				err = rh.sendToWorker(&m)
+				if err != nil {
+					logger.Warn("`RequestHandler::Add` sending message to worker with delay:", rh.Delay, "error:",  err)
+				}
+
+				rh.q.Delete(n)
+			}()
+		} else {
+			err = rh.sendToWorker(&m)
+			if err != nil {
+				logger.Warn("`RequestHandler::Add` sending message to worker with delay:", rh.Delay, "error:",  err)
+			}
+
+			rh.q.Delete(n)
+		}
 	}
 
 	logger.Log("request handler queue has:", rh.q.Length(), "nodes after add")
