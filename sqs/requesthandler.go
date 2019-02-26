@@ -1,20 +1,19 @@
 package sqs
 
 import (
-	"github.com/greenac/fifoqueue"
-	"net/http"
 	"encoding/json"
+	"github.com/greenac/fifoqueue"
 	"github.com/greenac/sqsmock/logger"
-	"github.com/greenac/sqsmock/response"
 	"github.com/greenac/sqsmock/models"
-	"reflect"
+	"github.com/greenac/sqsmock/response"
 	"github.com/greenac/sqsmock/worker"
+	"net/http"
+	"reflect"
 )
 
-
 type RequestHandler struct {
-	WorkerUrl *string
-	q *fifoqueue.FifoQueue
+	WorkerUrl   *string
+	q           *fifoqueue.FifoQueue
 	maxMessages int
 }
 
@@ -27,7 +26,7 @@ func (rh *RequestHandler) setUp() {
 	rh.maxMessages = 10
 }
 
-func (rh *RequestHandler) Add(w http.ResponseWriter, req *http.Request){
+func (rh *RequestHandler) Add(w http.ResponseWriter, req *http.Request) {
 	logger.Log("Request handler adding message")
 
 	var m models.Message
@@ -56,7 +55,7 @@ func (rh *RequestHandler) Add(w http.ResponseWriter, req *http.Request){
 	rh.sendOk(w, pl)
 }
 
-func (rh *RequestHandler) Delete(w http.ResponseWriter, req *http.Request){
+func (rh *RequestHandler) Delete(w http.ResponseWriter, req *http.Request) {
 	var m models.Message
 	rh.setUp()
 	err := json.NewDecoder(req.Body).Decode(&m)
@@ -99,7 +98,7 @@ func (rh *RequestHandler) Delete(w http.ResponseWriter, req *http.Request){
 	rh.sendOk(w, pl)
 }
 
-func (rh *RequestHandler) RetrieveSingle(w http.ResponseWriter, req *http.Request){
+func (rh *RequestHandler) RetrieveSingle(w http.ResponseWriter, req *http.Request) {
 	var m models.Message
 	rh.setUp()
 	err := json.NewDecoder(req.Body).Decode(&m)
@@ -134,7 +133,7 @@ func (rh *RequestHandler) RetrieveSingle(w http.ResponseWriter, req *http.Reques
 	rh.sendOk(w, pl)
 }
 
-func (rh *RequestHandler) Retrieve(w http.ResponseWriter, req *http.Request){
+func (rh *RequestHandler) Retrieve(w http.ResponseWriter, req *http.Request) {
 	var m models.Message
 	rh.setUp()
 	err := json.NewDecoder(req.Body).Decode(&m)
@@ -167,7 +166,7 @@ func (rh *RequestHandler) Retrieve(w http.ResponseWriter, req *http.Request){
 }
 
 func (rh *RequestHandler) sendToWorker(m *models.Message) error {
-	if  rh.WorkerUrl == nil {
+	if rh.WorkerUrl == nil {
 		return nil
 	}
 
@@ -191,8 +190,7 @@ func (rh *RequestHandler) sendToWorker(m *models.Message) error {
 	return nil
 }
 
-
-func (rh *RequestHandler) Print(w http.ResponseWriter, req *http.Request){
+func (rh *RequestHandler) Print(w http.ResponseWriter, req *http.Request) {
 	rh.setUp()
 	nodes := rh.q.AsSlice()
 	for i, n := range *nodes {
@@ -215,4 +213,3 @@ func (rh *RequestHandler) sendOk(w http.ResponseWriter, payload interface{}) {
 	rr := response.Response{Error: nil, ResponseMetadata: &payload}
 	rr.Respond(w)
 }
-

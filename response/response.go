@@ -6,8 +6,8 @@ import (
 )
 
 type Response struct {
-	Error *map[string]interface{}   `json:"error"`
-	ResponseMetadata  *interface{}  `json:"ResponseMetadata"`
+	Error            *map[string]interface{} `json:"error"`
+	ResponseMetadata *interface{}            `json:"ResponseMetadata"`
 }
 
 func (r *Response) Respond(w http.ResponseWriter) {
