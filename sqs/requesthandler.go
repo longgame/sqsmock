@@ -14,10 +14,10 @@ import (
 
 type RequestHandler struct {
 	WorkerUrl   *string
-	Delay int64
+	Delay       int64
 	q           *fifoqueue.FifoQueue
 	maxMessages int
-	count   int
+	count       int
 }
 
 func (rh *RequestHandler) setUp() {
@@ -58,7 +58,7 @@ func (rh *RequestHandler) Add(w http.ResponseWriter, req *http.Request) {
 				logger.Log("Sending delayed message to worker for message count:", c)
 				err = rh.sendToWorker(&m)
 				if err != nil {
-					logger.Warn("`RequestHandler::Add` sending message to worker with delay:", rh.Delay, "error:",  err)
+					logger.Warn("`RequestHandler::Add` sending message to worker with delay:", rh.Delay, "error:", err)
 				}
 
 				rh.q.Delete(n)
@@ -66,7 +66,7 @@ func (rh *RequestHandler) Add(w http.ResponseWriter, req *http.Request) {
 		} else {
 			err = rh.sendToWorker(&m)
 			if err != nil {
-				logger.Warn("`RequestHandler::Add` sending message to worker with delay:", rh.Delay, "error:",  err)
+				logger.Warn("`RequestHandler::Add` sending message to worker with delay:", rh.Delay, "error:", err)
 			}
 
 			rh.q.Delete(n)
