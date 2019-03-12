@@ -13,11 +13,12 @@ import (
 )
 
 type RequestHandler struct {
-	WorkerUrl   *string
+	WorkerUrls   *[]string
 	Delay       int64
 	q           *fifoqueue.FifoQueue
 	maxMessages int
 	count       int
+	workerCounter int
 }
 
 func (rh *RequestHandler) setUp() {
@@ -190,7 +191,7 @@ func (rh *RequestHandler) Retrieve(w http.ResponseWriter, req *http.Request) {
 }
 
 func (rh *RequestHandler) sendToWorker(m *models.Message) error {
-	if rh.WorkerUrl == nil {
+	if rh.WorkerUrls == nil {
 		return nil
 	}
 
@@ -208,8 +209,14 @@ func (rh *RequestHandler) sendToWorker(m *models.Message) error {
 		workerPl = &m
 	}
 
-	wi := worker.Interface{BaseUrl: *(rh.WorkerUrl)}
-	wi.SendNewMessage(workerPl)
+	urls := *(rh.WorkerUrls)
+	url := urls[rh.workerCounter % len(urls)]
+	rh.updateWorkerCounter()
+	wi := worker.Interface{BaseUrl: url}
+	err := wi.SendNewMessage(workerPl)
+	if err != nil {
+		logger.Warn("`RequestHandler::sendToWorker error sending message to:", url, err)
+	}
 
 	return nil
 }
@@ -236,4 +243,11 @@ func (rh *RequestHandler) error(w http.ResponseWriter, rc ResponseCode) {
 func (rh *RequestHandler) sendOk(w http.ResponseWriter, payload interface{}) {
 	rr := response.Response{Error: nil, ResponseMetadata: &payload}
 	rr.Respond(w)
+}
+
+func (rh *RequestHandler) updateWorkerCounter() {
+	rh.workerCounter += 1
+	if rh.workerCounter % 10000 == 0 {
+		rh.workerCounter = 0
+	}
 }

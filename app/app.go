@@ -12,14 +12,14 @@ import (
 
 type serverArguments struct {
 	ServerUrl *string
-	WorkerUrl *string
+	WorkerUrls *[]string
 	Delay     int64
 }
 
 const (
 	delay        = "delay"
 	serverUrlArg = "url"
-	workerUrlArg = "workerUrl"
+	workerUrlsArg = "workerUrls"
 )
 
 func (sa *serverArguments) formatServerUrl() {
@@ -37,16 +37,27 @@ func (sa *serverArguments) formatServerUrl() {
 	}
 }
 
-func (sa *serverArguments) formatWorkerUrl() {
-	if !strings.Contains(*(sa.WorkerUrl), "http://") && !strings.Contains(*(sa.WorkerUrl), "https://") {
-		url := "http://" + *(sa.WorkerUrl)
-		sa.WorkerUrl = &url
+func (sa *serverArguments) formatWorkerUrls() {
+	for i:=0; i < len(*sa.WorkerUrls); i += 1 {
+		url := sa.formatWorkerUrl((*sa.WorkerUrls)[i])
+		if url != (*sa.WorkerUrls)[i] {
+			(*sa.WorkerUrls)[i] = url
+		}
 	}
+}
+
+func (sa *serverArguments) formatWorkerUrl(url string) string {
+	wUrl := url
+	if !strings.Contains(url, "http://") && !strings.Contains(url, "https://") {
+		wUrl = "http://" + url
+	}
+
+	return wUrl
 }
 
 func (sa *serverArguments) formatUrls() {
 	sa.formatServerUrl()
-	sa.formatWorkerUrl()
+	sa.formatWorkerUrls()
 }
 
 func (sa *serverArguments) getUrls() *[]string {
@@ -55,8 +66,8 @@ func (sa *serverArguments) getUrls() *[]string {
 		urls = append(urls, *(sa.ServerUrl))
 	}
 
-	if sa.WorkerUrl != nil {
-		urls = append(urls, *(sa.WorkerUrl))
+	if sa.WorkerUrls != nil {
+		urls = append(urls, *(sa.WorkerUrls)...)
 	}
 
 	return &urls
@@ -65,14 +76,14 @@ func (sa *serverArguments) getUrls() *[]string {
 func Start() {
 	args := parseArgs()
 
-	if args.WorkerUrl == nil {
-		logger.Warn("No worker url provided. If a worker is needed to forward messages, use --workerUrl flag")
+	if args.WorkerUrls == nil {
+		logger.Warn("No worker urls provided. If a worker is needed to forward messages, use --workerUrls flag")
 	}
 
 	args.formatUrls()
 	logger.Log("Running sqs mock server on urls:", *(args.getUrls()))
 
-	handler := sqs.RequestHandler{WorkerUrl: args.WorkerUrl, Delay: args.Delay}
+	handler := sqs.RequestHandler{WorkerUrls: args.WorkerUrls, Delay: args.Delay}
 	router := mux.NewRouter()
 	router.HandleFunc(sqs.AddMessageEndpoint, handler.Add).Methods("POST")
 	router.HandleFunc(sqs.RetrieveMessageEndpoint, handler.Retrieve).Methods("POST")
@@ -80,6 +91,16 @@ func Start() {
 	router.HandleFunc(sqs.PrintQueueEndpoint, handler.Print).Methods("GET")
 
 	logger.Error(http.ListenAndServe(*(args.ServerUrl), router))
+}
+
+func parseWorkerUrls(urls string) []string {
+	parts := strings.Split(urls, ",")
+	pUrls := make([]string, len(parts))
+	for i, p := range parts {
+		pUrls[i] = strings.Replace(p, " ", "", -1)
+	}
+
+	return pUrls
 }
 
 func parseArgs() *serverArguments {
@@ -99,13 +120,13 @@ func parseArgs() *serverArguments {
 						logger.Error("Could not convert arg:", val, "to integer for delay")
 						panic(err)
 					}
-
 					sa.Delay = int64(d)
 				case serverUrlArg:
 					sa.ServerUrl = &val
 					break
-				case workerUrlArg:
-					sa.WorkerUrl = &val
+				case workerUrlsArg:
+					wUrls := parseWorkerUrls(val)
+					sa.WorkerUrls = &wUrls
 					break
 				default:
 					logger.Warn("Cannot get argument for:", arg, "unknown argument type")
