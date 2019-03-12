@@ -213,9 +213,10 @@ func (rh *RequestHandler) sendToWorker(m *models.Message) error {
 	url := urls[rh.workerCounter % len(urls)]
 	rh.updateWorkerCounter()
 	wi := worker.Interface{BaseUrl: url}
+	logger.Log("`RequestHandler::sendToWorker` sending message to:", url)
 	err := wi.SendNewMessage(workerPl)
 	if err != nil {
-		logger.Warn("`RequestHandler::sendToWorker error sending message to:", url, err)
+		logger.Warn("`RequestHandler::sendToWorker` error sending message to:", url, err)
 	}
 
 	return nil
